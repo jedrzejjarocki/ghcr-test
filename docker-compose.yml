@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  node-app:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${DOCKER_HOST_API_PORT}:3000"
+    depends_on:
+      - mariadb
+    env_file: .env   # Specify the path to your .env file
+    networks:
+      - app-network
+
+  mariadb:
+    image: mariadb:11
+    restart: always
+    command: --init-file /data/application/init.sql
+    ports:
+      - "${DOCKER_HOST_DB_PORT}:3306"
+    volumes:
+      - ./db_init.sql:/data/application/init.sql
+      - mariadb-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: evm_node_tools
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - app-network
+
+volumes:
+  mariadb-data:
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
